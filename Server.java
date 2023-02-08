@@ -1,42 +1,41 @@
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Server {
+    public static final int DNS_PORT = 53;
+    public static final int RESOLVER_SRC_PORT = 6004;
+    public static final int MAX_PACKET_SIZE = 65536;
+    public static final String REAL_DNS_SERVER = "8.8.8.8";
+
     public static Map<Short, SocketAddress> activeRequests;
     public static DatagramSocket userSocket = null;
-    public static InetAddress dnsAddr = null;
+    public static SocketAddress dnsAddr = null;
     public static DatagramSocket dnsSocket = null;
 
     public static void main(String[] args) {
         // Set up the request ID tracker
         activeRequests = new HashMap<Short, SocketAddress>();
 
-        // Open a UDP socket on port 53
+        // Open a UDP socket on the DNS port (usually 53)
         try {
-            userSocket = new DatagramSocket(53);
+            userSocket = new DatagramSocket(DNS_PORT);
         } catch (IOException e) {
-            System.err.println("Cannot bind to UDP port 53");
+            e.printStackTrace();
             System.exit(-1);
         }
 
-        // Get the address of a real name server
-        try {
-            dnsAddr = InetAddress.getByName("8.8.8.8"); // There's a certain irony here
-        } catch (UnknownHostException e) {
-            System.err.println("Failed to get default DNS address");
-            System.exit(-1);
-        }
+        // Get DNS address
+        dnsAddr = new InetSocketAddress(REAL_DNS_SERVER, DNS_PORT);
 
-        // Open a connection to a real DNS server
+        // Open a UDP socket for the DNS responses
         try {
-            dnsSocket = new DatagramSocket(6004);
+            dnsSocket = new DatagramSocket(RESOLVER_SRC_PORT);
         } catch (IOException e) {
-            System.err.println("Cannot bind to UDP port 6004");
+            e.printStackTrace();
             System.exit(-1);
         }
 
@@ -51,7 +50,6 @@ public class Server {
             userThread.join();
             dnsThread.join();
         } catch (InterruptedException e) {
-            System.out.println("Interrupted");
             userSocket.close();
             dnsSocket.close();
             System.exit(0);

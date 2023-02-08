@@ -8,15 +8,14 @@ public class ResponseHandler implements Runnable {
         // Tunnel the response packets
         while (!Server.dnsSocket.isClosed()) {
             // Get the DNS response
-            byte[] outBuffer = new byte[65536];
+            byte[] outBuffer = new byte[Server.MAX_PACKET_SIZE];
             DatagramPacket outPacket = new DatagramPacket(outBuffer, outBuffer.length);
             try {
                 Server.dnsSocket.receive(outPacket);
             } catch (IOException e) {
-                System.err.println("Error receiving packet from DNS");
+                e.printStackTrace();
                 continue;
             }
-            System.out.println("Response from " + Server.dnsAddr);
 
             // Get the correct address for the response ID
             short dnsId = (short)(outBuffer[0] << 8 | outBuffer[1]);
@@ -27,10 +26,8 @@ public class ResponseHandler implements Runnable {
             try {
                 Server.userSocket.send(outPacket);
             } catch (IOException e) {
-                System.out.println("Failed to send packet to user");
-                continue;
+                e.printStackTrace();
             }
-            System.out.println("Sent to " + responseAddr);
         }
     }
 }
