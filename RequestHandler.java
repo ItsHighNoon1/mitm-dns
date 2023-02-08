@@ -3,7 +3,31 @@ import java.net.DatagramPacket;
 
 public class RequestHandler implements Runnable {
     private void recordRequest(DatagramPacket requestPacket) {
-        System.out.println(requestPacket.getSocketAddress());
+        byte[] bytes = requestPacket.getData();
+
+        // Bytes 0 - 3 are the ID and flags which don't contain user data
+        // Bytes 4 and 5 are the number of questions which will help us later
+        int nQuestions = (int)bytes[4] << 8 | (int)bytes[5];
+        // Bytes 6 - 11 are counts for other resources I don't care about
+
+        // Build the string based on the DNS question
+        int byteIndex = 12;
+        for (int q = 0; q < nQuestions && byteIndex < requestPacket.getLength(); q++) {
+            StringBuilder nameBuilder = new StringBuilder();
+            while (true) {
+                int labelLength = bytes[byteIndex++];
+                if (labelLength == 0) {
+                    break;
+                }
+
+                // Add the label to the string builder
+                for (int l = 0; l < labelLength; l++) {
+                    nameBuilder.append((char)bytes[byteIndex++]);
+                }
+                nameBuilder.append('.');
+            }
+            System.out.println(requestPacket.getAddress() + "\t" + nameBuilder.substring(0, nameBuilder.length() - 1));
+        }
     }
 
     @Override
