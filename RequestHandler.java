@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.sql.*;
 
 public class RequestHandler implements Runnable {
     private void recordRequest(DatagramPacket requestPacket) {
@@ -27,6 +28,24 @@ public class RequestHandler implements Runnable {
                 nameBuilder.append('.');
             }
             System.out.println(requestPacket.getAddress() + "\t" + nameBuilder.substring(0, nameBuilder.length() - 1));
+
+
+            // path to database
+            // FILL THIS IN
+            String url = "path/database.db";
+            
+            // SQL statement
+            String sql = "INSERT INTO mitm(ip, query) VALUES(" + requestPacket.getAddress() + "," + nameBuilder.substring(0, nameBuilder.length() - 1) + ")";
+            
+            try (Connection conn = DriverManager.getConnection(url);
+
+                PreparedStatement statement = conn.prepareStatement(sql)) {
+            
+                statement.executeUpdate();
+
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
